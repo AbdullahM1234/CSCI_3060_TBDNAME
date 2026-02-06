@@ -9,7 +9,7 @@ def login():
     # i.e if username does not equal u
 
     # if user is logged in, error message and redirect to log out
-    if username == "u":
+    if name == "u":
         print("You are already logged in. Logout?")
         logAns = input("(y/n): ")
         if logAns == "y" or logAns == "Y":
