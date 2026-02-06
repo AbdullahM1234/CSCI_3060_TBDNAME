@@ -360,7 +360,34 @@ def changeplan():
     return
 
 def main():
-    login()
+    print("Welcome! What would you like to do?\n")
+    print("1. Log in\n2. Withdraw\n3. Transfer\n4. Pay Bill\n5. Deposit\n6. Create Account\n7. Delete Account\n8. Disable Account\n9. Change Account Plan\n10. Log Out\n")
+    choice = input("Please input the number of your selection to be redirected: ")
+
+    match choice:
+        case 1:
+            login()
+        case 2:
+            withdrawal()
+        case 3:
+            transfer()
+        case 4:
+            paybill()
+        case 5:
+            deposit()
+        case 6:
+            create()
+        case 7:
+            delete()
+        case 8:
+            disable()
+        case 9:
+            changeplan()
+        case 10:
+            logout()
+        case _:
+            print("Unknown operation. Please try again.")
+            main()
 
 if __name__ == "__main__":
     main()
