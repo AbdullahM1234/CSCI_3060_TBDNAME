@@ -1,393 +1,406 @@
-# global variables
-name = "u" # default name
-session = "standard" # default session
+import os 
+
+name = "u"  # default name (means not logged in)
+session = "standard"  # default session
+
+accounts = {}  # stores all accounts loaded from file
+session_transactions = []  # stores transactions during current session
+
+# make sure you run the py file in the CSCI_3060_TBDNAME directory
+# or the file reading wont work
+ACCOUNTS_FILE = "accounts.txt"
+DAILY_TX_FILE = "transactions/daily_transactions.txt"
+
+VALID_PAYEES = [  # allowed payees for paybill
+    "Company",
+    "Business Inc",
+    "John Business",
+]
+
+
+def load_accounts():
+    # loads account data from accounts.txt into memory
+    global accounts
+    accounts = {}
+
+    f = open(ACCOUNTS_FILE, "r", encoding="utf-8")  # open accounts file
+    for raw in f:
+        line = raw.strip()  # remove whitespace
+        if line == "":
+            continue  # skip empty lines
+
+        parts = line.split()  # split line into fields
+        acc_name = parts[0]
+        acc_num = parts[1]
+        bal = float(parts[2])
+        status = parts[3]
+        plan = parts[4]
+
+        accounts[acc_num] = {  # store account info in dictionary
+            "name": acc_name,
+            "balance": bal,
+            "status": status,
+            "plan": plan
+        }
+    f.close() 
+
+
+def write_daily_transactions():
+    # writes all session transactions to file and adds 00 at end
+    global session_transactions
+
+    f = open(DAILY_TX_FILE, "w", encoding="utf-8")  # open output file
+    for rec in session_transactions:
+        f.write(rec + "\n")  # write each transaction
+    f.write("00\n")  # end of session record
+    f.close()
 
 
 def login():
+    # handles login for admin or standard session
+    global name, session
 
-    # check if user has already logged in
-    # i.e if username does not equal u
+    if name != "u":  # check if already logged in
+        print("You are already logged in.")
+        return
 
-    # if user is logged in, error message and redirect to log out
-    if name == "u":
-        print("You are already logged in. Logout?")
-        logAns = input("(y/n): ")
-        if logAns == "y" or logAns == "Y":
-            logout()
-        else:
-            return
-    
-    # else
     print("Welcome.")
-    print("What session are you opening today? (admin or standard)\n")
-    sessionType = input()
+    print("What session are you opening today? (admin or standard)")
+    sessionType = input().strip().lower()
 
     if sessionType == "admin":
         print("admin selected.")
         session = "admin"
-
-        # do not prompt for name input, move straight to menu
+        name = "admin"
+        session_transactions.append("01 LOGIN ADMIN")  # record login
         return
 
-    else:
-        print("standard selected.")
-        name = input("Name: ") 
-        # existing & valid account check
+    print("standard selected.")
+    session = "standard"
 
-        # if not valid or not existing, prompt to create a new account or try again
-        """
-        
-        print("Account does not exist or credentials were invalid.\n")
+    acc_num = input("Account number: ").strip()
+    if acc_num not in accounts:
+        print("Account does not exist.")
+        return
 
-        # reset username to default
-        username = "username"
+    if accounts[acc_num]["status"].upper() == "D":
+        print("Account is disabled.")
+        return
 
-        print("press button to try again")
-        loginDecision = input()
-        login()
-
-        """
-
-        print(f"Welcome, {name}.")
-
-        # print account details
-
+    name = accounts[acc_num]["name"]
+    session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name)
+    print("Welcome, " + name + ".")
     return
+
 
 def logout():
-    # check that user is logged in (username not default)
+    # ends session and writes transaction file
+    global name, session, session_transactions
 
-    if name == "u":
+    if name == "u":  # check if logged in
         print("You are not logged in.")
         return
-    
-    # print transactions made during session
 
-    # check for deposited money during session, add that to usable account funds
+    write_daily_transactions()  # write session transactions
 
-    # set account to available for transactions
+    name = "u"  # reset login
+    session = "standard"
+    session_transactions = []
 
-    # reset name and session to default (not logged in)
+    print("Logged out.")
+    return
 
-    # log back in once logged out
-    login()
 
 def withdrawal():
-    # check session and check login
+    # handles withdrawal transaction
+    global name, session
 
-    if name == "u":
+    if name == "u":  # must be logged in
         print("You are not logged in.")
         return
-    
-    # check if available for transactions
-        # if not, prompt to log out 
 
-    # if admin, ask for account holder name
     if session == "admin":
-        print("Please provide the account holder's name.")
-        accountName = input()
+        accountName = input("Account holder name: ").strip()
     else:
         accountName = name
-    # check that account name is valid
-        # if not, prompt to try again
 
-    # ask for account number
-    print("Please provide the account number.")
-    accountNum = input()
-    # check account number is valid
-        # if not, prompt to try again
-    # check if account number is associated with account name
-        # if not, return
+    accountNum = input("Account number: ").strip()
+    withdraw_amt = float(input("Withdrawal amount: ").strip())
 
-    # ask for  withdrawal amount
-    print("Please enter the withdrawal amount.")
-    withdraw = input()
+    if withdraw_amt > 500:  # check limit
+        print("Exceeds withdraw limit.")
+        return
 
-    # check if more than $500
-    if withdraw >= 500:
-        #if true, prompt to try again
-        print("Sorry, this exceeds our withdraw limit of 500.\n Please try again.")
-        withdrawal()
-    
-    # check that bank account will have at least $0 after transaction
-        # if either true, reject withdrawal, return to menu
+    if accountNum not in accounts:
+        print("Account does not exist.")
+        return
 
-    # save to bank transaction file
+    if accounts[accountNum]["status"].upper() == "D":
+        print("Account is disabled.")
+        return
 
+    accounts[accountNum]["balance"] = accounts[accountNum]["balance"] - withdraw_amt
+    session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName)
+    print("Withdrawal recorded.")
     return
+
 
 def transfer():
-    # check session and check login
+    # handles transfer transaction
+    global name, session
 
     if name == "u":
         print("You are not logged in.")
         return
 
-    # check if available for transactions
-        # if not, prompt to log out 
-
-    # if admin, ask for account holder name
     if session == "admin":
-        print("Please provide the account holder's name.")
-        accountName = input()
+        accountName = input("Account holder name: ").strip()
     else:
         accountName = name
-    # check that account name is valid
-    # if not, prompt to try again
 
-    # ask for account number 1
-    print("Please provide the number for the account you are transfering from.")
-    acc1 = input()
-    # check if valid
-        # if not, prompt to try again
+    acc1 = input("From account number: ").strip()
+    acc2 = input("To account number: ").strip()
+    transferAmount = float(input("Transfer amount: ").strip())
 
-    # ask for account number 2
-    print("Please provide the number of the account you are transfering to.")
-    acc2 = input()
-    # check if valid
-        # if not, prompt to try again 
+    if transferAmount > 1000:  # check limit
+        print("Exceeds transfer limit.")
+        return
 
-    # ask for transfer ammount
-    print("please provide a transfer amount.")
-    transferAmount = input()
+    if acc1 not in accounts or acc2 not in accounts:
+        print("One of the accounts does not exist.")
+        return
 
-    # check if more than $1000
-    if transferAmount >= 1000:
-        #if true, prompt to try again
-        print("Sorry, this exceeds our withdraw limit of 500.\n Please try again.")
-        transfer()
-    # check if back account 1 will have at least $0 after transfer
-    # check that account 2 is not overdrafted
-        # if any true, reject transfer, return to menu
+    if accounts[acc1]["status"].upper() == "D" or accounts[acc2]["status"].upper() == "D":
+        print("One of the accounts is disabled.")
+        return
 
-    # save to bank transaction file
+    accounts[acc1]["balance"] = accounts[acc1]["balance"] - transferAmount
+    accounts[acc2]["balance"] = accounts[acc2]["balance"] + transferAmount
 
+    session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName)
+    print("Transfer recorded.")
     return
 
+
 def paybill():
-    # check session and check login
+    # handles paybill transaction
+    global name, session
 
     if name == "u":
         print("You are not logged in.")
         return
 
-    # check if available for transactions
-        # if not, prompt to log out 
-
-    # if admin, ask for account holder name
     if session == "admin":
-        print("Please provide the account holder's name.")
-        accountName = input()
+        accountName = input("Account holder name: ").strip()
     else:
         accountName = name
 
-    # ask for account number
-    print("Please provide an account number.")
-    accNum = input()
-    # check if valid
-        # if not, prompt to try again
+    accNum = input("Account number: ").strip()
+    payee = input("Payee: ").strip()
+    billPaid = float(input("Bill amount: ").strip())
 
-    # ask for payee
-    print("Please provide the name of the Payee.")
-    payee = input()
-    # check if valid payee
-    if payee != "The Bright Light Electric Company (EC)" or "Credit Card Company Q (CQ)" or "Fast Internet, Inc. (FI)":
-        # if not, prompt to try again
-        print("Payee invalid. Try again.")
-        paybill()
+    if billPaid > 2000:  # check limit
+        print("Exceeds bill limit.")
+        return
 
-    # ask for bill pay amount
-    print("Please enter the amount to be paid.")
-    billPaid = input()
+    if accNum not in accounts:
+        print("Account does not exist.")
+        return
 
-    # check if more than $2000
-    if billPaid >= 2000:
-        print("This payment exceeds our payment limit. Please try again.")
-        paybill()
-    # check if account will have at least $0 after payment
-        # if either, reject payment and return to menu
+    if payee not in VALID_PAYEES:
+        print("Payee invalid.")
+        return
 
-    # save to bank transaction file
-
+    accounts[accNum]["balance"] = accounts[accNum]["balance"] - billPaid
+    session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName)
+    print("Bill payment recorded.")
     return
 
 
 def deposit():
-    # check session and check login
+    # handles deposit transaction
+    global name, session
 
     if name == "u":
         print("You are not logged in.")
         return
 
-    # check if available for transactions
-        # if not, prompt to log out 
-
-    # if admin, ask for account holder name
     if session == "admin":
-        print("Please provide the account holder's name.")
-        accountName = input()
+        accountName = input("Account holder name: ").strip()
     else:
         accountName = name
 
-    # ask for account number
-    print("Please provide an account number.")
-    accNum = input()
-    # check if valid
-        # if not, prompt to try again
-    
-    # ask for deposit amount
-    print("Please provide the amount to be deposited.")
-    deposit = input()
+    accNum = input("Account number: ").strip()
+    amount = float(input("Deposit amount: ").strip())
 
-    # save to bank transaction file
+    if accNum not in accounts:
+        print("Account does not exist.")
+        return
 
-    # store to be added at end of session
-
+    accounts[accNum]["balance"] = accounts[accNum]["balance"] + amount
+    session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName)
+    print("Deposit recorded.")
     return
 
+
 def create():
-    # check session type, only accept if admin
+    # creates new account (admin only)
+    global name, session
 
     if name == "u":
         print("You are not logged in.")
-        return 
-    # ask for name
-    if session == "admin":
-        print("Please provide the account holder's name.")
-        accountName = input()
-        # check if exists
-            # if it does, prompt to try again
-        # check if name is more than 20 characters
-        if len(accountName) > 20:
-            # if it is, prompt to try again
-            print("Name provided is too long. Try again.")
-            create()
-            
-
-        # ask for inital account balance
-        print("Please provide initial account balance.")
-        balanceinit = input()
-        # check if less than $99999.99
-        if balanceinit >= 100000:
-            # if not, prompt to try again
-            print("Balance exceeds limit. Please try again.")
-            create()
-
-        # generate random account number
-
-        # save and print info to bank transaction file
-
-        # note to not allow transactions on this account until session ends
-        # else, return
-    else:
         return
+
+    if session != "admin":
+        print("Admin only.")
+        return
+
+    accountName = input("Account holder name: ").strip()
+    balanceinit = float(input("Initial balance: ").strip())
+
+    new_num = "10000"
+    while new_num in accounts:
+        new_num = str(int(new_num) + 1)
+
+    accounts[new_num] = {
+        "name": accountName,
+        "balance": balanceinit,
+        "status": "A",
+        "plan": "N"
+    }
+
+    session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit))
+    print("Account created: " + new_num)
     return
+
 
 def delete():
-    # check session type, only accept if admin
+    # deletes account (admin only)
+    global name, session
 
-    if session == "admin":
-        # ask for name
-        print("Please provide the account holder's name.")
-        accountName = input()
-        # check if exists
-            # if not, prompt to try again
-            
-        # ask for account number
-        print("Please provide an account number.")
-        accNum = input()
-        # check if exists
-            # if not, prompt to try again
-        # check if associated with name
-            # if not, return to menu
-            
-        # save to bank transaction file
-
-        # set data to deleted
-    # else, return
-    else:
+    if name == "u":
+        print("You are not logged in.")
         return
+
+    if session != "admin":
+        print("Admin only.")
+        return
+
+    accountName = input("Account holder name: ").strip()
+    accNum = input("Account number: ").strip()
+
+    if accNum not in accounts:
+        print("Account does not exist.")
+        return
+
+    del accounts[accNum]
+    session_transactions.append("07 DELETE " + accNum + " " + accountName)
+    print("Account deleted.")
     return
+
 
 def disable():
-    # check session type, only accept if admin
-    if session == "admin":
-    # ask for name
-        print("Please provide the account holder's name.")
-        accountName = input()
-        # check if exists
-            # if not, prompt to try again
+    # disables account (admin only)
+    global name, session
 
-        # ask for account number
-        print("Please provide an account number.")
-        accNum = input()
-        # check if exists
-            # if not, prompt to try again
-        # check if associated with name
-            # if not, return to menu
-            
-        # change bank account status to disabled and no transactions
-        # save to bank account transaction file
-    # else, return
-    else:
+    if name == "u":
+        print("You are not logged in.")
         return
+
+    if session != "admin":
+        print("Admin only.")
+        return
+
+    accountName = input("Account holder name: ").strip()
+    accNum = input("Account number: ").strip()
+
+    if accNum not in accounts:
+        print("Account does not exist.")
+        return
+
+    accounts[accNum]["status"] = "D"
+    session_transactions.append("08 DISABLE " + accNum + " " + accountName)
+    print("Account disabled.")
     return
+
 
 def changeplan():
-    # check session tupe, only accept if admin
-    if session == "admin":
-        # ask for name
-        print("Please provide the account holder's name.")
-        accountName = input()
-        # check if exists
-            # if not, prompt to try again
+    # toggles account plan (admin only)
+    global name, session
 
-        # ask for account number
-        print("Please provide an account number.")
-        accNum = input()
-        # check if exists
-            # if not, prompt to try again
-        # check if associated with name
-            # if not, return to menu
-        
-        # change bank account plan to either student or non student (opposite whatever is currently selected)
-
-        # save to bank account transaction file
-    # else, return
-    else:
+    if name == "u":
+        print("You are not logged in.")
         return
-    
+
+    if session != "admin":
+        print("Admin only.")
+        return
+
+    accountName = input("Account holder name: ").strip()
+    accNum = input("Account number: ").strip()
+
+    if accNum not in accounts:
+        print("Account does not exist.")
+        return
+
+    current = accounts[accNum]["plan"].upper()
+    if current == "S":
+        accounts[accNum]["plan"] = "N"
+    else:
+        accounts[accNum]["plan"] = "S"
+
+    session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName)
+    print("Plan changed.")
     return
 
-def main():
-    print("Welcome! What would you like to do?\n")
-    print("1. Log in\n2. Withdraw\n3. Transfer\n4. Pay Bill\n5. Deposit\n6. Create Account\n7. Delete Account\n8. Disable Account\n9. Change Account Plan\n10. Log Out\n")
-    choice = input("Please input the number of your selection to be redirected: ")
 
-    match choice:
-        case 1:
-            login()
-        case 2:
-            withdrawal()
-        case 3:
-            transfer()
-        case 4:
-            paybill()
-        case 5:
-            deposit()
-        case 6:
-            create()
-        case 7:
-            delete()
-        case 8:
-            disable()
-        case 9:
-            changeplan()
-        case 10:
-            logout()
-        case _:
-            print("Unknown operation. Please try again.")
-            main()
+def main():
+    # main menu loop
+    load_accounts()
+
+    while True:
+        print("\nWelcome! What would you like to do?\n")
+        print("1. Log in")
+        print("2. Withdraw")
+        print("3. Transfer")
+        print("4. Pay Bill")
+        print("5. Deposit")
+        print("6. Create Account")
+        print("7. Delete Account")
+        print("8. Disable Account")
+        print("9. Change Account Plan")
+        print("10. Log Out")
+        print("11. Exit\n")
+
+        choice = input("Please input the number of your selection to be redirected: ").strip()
+
+        match choice:
+            case "1":
+                login()
+            case "2":
+                withdrawal()
+            case "3":
+                transfer()
+            case "4":
+                paybill()
+            case "5":
+                deposit()
+            case "6":
+                create()
+            case "7":
+                delete()
+            case "8":
+                disable()
+            case "9":
+                changeplan()
+            case "10":
+                logout()
+            case "11":
+                print("Goodbye.")
+                break
+            case _:
+                print("Unknown operation. Please try again.")
+
 
 if __name__ == "__main__":
     main()
