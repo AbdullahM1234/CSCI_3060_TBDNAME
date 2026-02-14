@@ -1,3 +1,11 @@
+# Basic front end skeleton structure
+
+# Group members
+# Samir Neogi - 100923675
+# Abdullah Mobashar - 100918452 
+# Megan Brandreth - 100778693
+# Brian Husted - 100878395
+
 import os 
 
 name = "u"  # default name (means not logged in)
