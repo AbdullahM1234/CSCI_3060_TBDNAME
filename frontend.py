@@ -70,6 +70,7 @@ def login():
 
     if name != "u":  # check if already logged in
         print("You are already logged in.")
+        session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name + " FAIL_LOGGED_IN")
         return
 
     print("Welcome.")
@@ -125,6 +126,7 @@ def withdrawal():
 
     if name == "u":  # must be logged in
         print("You are not logged in.")
+        session_transactions.append("02 WITHDRAW FAIL_NO_LOGIN")
         return
 
     if session == "admin":
@@ -137,15 +139,22 @@ def withdrawal():
 
     if withdraw_amt > 500:  # check limit
         print("Exceeds withdraw limit.")
+        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_EXCEEDS_SESSION_LIMIT")
         return
 
     if accountNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_INVALID_ACCOUNT_NUM")
         return
 
     if accounts[accountNum]["status"].upper() == "D":
         print("Account is disabled.")
+        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_ACCOUNT_DISABLED")
         return
+
+    # missing overdraft case
+
+    # missing deleted account case
 
     accounts[accountNum]["balance"] = accounts[accountNum]["balance"] - withdraw_amt
     session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName)
@@ -159,6 +168,7 @@ def transfer():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("03 TRANSFER FAIL_NO_LOGIN")
         return
 
     if session == "admin":
@@ -172,15 +182,22 @@ def transfer():
 
     if transferAmount > 1000:  # check limit
         print("Exceeds transfer limit.")
+        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_LIMIT_EXCEEDED")
         return
 
     if acc1 not in accounts or acc2 not in accounts:
         print("One of the accounts does not exist.")
+        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_INVALID_RECIPENT")
         return
 
     if accounts[acc1]["status"].upper() == "D" or accounts[acc2]["status"].upper() == "D":
         print("One of the accounts is disabled.")
+        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_ACCOUNT_DISABLED")
         return
+    
+    # missing overdraft test case
+
+    # missing deleted account case
 
     accounts[acc1]["balance"] = accounts[acc1]["balance"] - transferAmount
     accounts[acc2]["balance"] = accounts[acc2]["balance"] + transferAmount
@@ -196,6 +213,7 @@ def paybill():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("04 PAYBILL FAIL_NO_LOGIN")
         return
 
     if session == "admin":
@@ -209,15 +227,26 @@ def paybill():
 
     if billPaid > 2000:  # check limit
         print("Exceeds bill limit.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_EXCEEDS_SESSION_LIMIT")
         return
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_ACCOUNT_NUM_DNE")
         return
 
     if payee not in VALID_PAYEES:
         print("Payee invalid.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_INVALID_PAYEE")
         return
+    
+    # missing overdraft case
+
+    # missing invalid account name case
+
+    # missing deleted account case
+
+    # missing disabled account case
 
     accounts[accNum]["balance"] = accounts[accNum]["balance"] - billPaid
     session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName)
@@ -231,6 +260,7 @@ def deposit():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("05 DEPOSIT FAIL_NO_LOGIN")
         return
 
     if session == "admin":
@@ -243,7 +273,12 @@ def deposit():
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_INVALID_ACCOUNT_NUMBER")
         return
+    
+    # missing disabled account case
+
+    # missing deleted account case
 
     accounts[accNum]["balance"] = accounts[accNum]["balance"] + amount
     session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName)
@@ -257,10 +292,12 @@ def create():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("06 CREATE FAIL_NO_LOGIN")
         return
 
     if session != "admin":
         print("Admin only.")
+        session_transactions.append("06 CREATE FAIL_ADMIN_ONLY")
         return
 
     accountName = input("Account holder name: ").strip()
@@ -277,6 +314,12 @@ def create():
         "plan": "N"
     }
 
+    # missing name too long case
+
+    # missing too much money case
+
+    # missing non-unique case
+
     session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit))
     print("Account created: " + new_num)
     return
@@ -288,10 +331,12 @@ def delete():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("07 DELETE FAIL_NO_LOGIN")
         return
 
     if session != "admin":
         print("Admin only.")
+        session_transactions.append("07 DELETE FAIL_NOT_ADMIN")
         return
 
     accountName = input("Account holder name: ").strip()
@@ -299,7 +344,10 @@ def delete():
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("07 DELETE " + accNum + " " + accountName + " FAIL_NO_MATCH")
         return
+
+    # missing text case for name not matching
 
     del accounts[accNum]
     session_transactions.append("07 DELETE " + accNum + " " + accountName)
@@ -313,10 +361,12 @@ def disable():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("08 DISABLE FAIL_NO_LOGIN")
         return
 
     if session != "admin":
         print("Admin only.")
+        session_transactions.append("08 DISABLE FAIL_NOT_ADMIN")
         return
 
     accountName = input("Account holder name: ").strip()
@@ -324,7 +374,10 @@ def disable():
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("08 DISABLE " + accNum + " " + accountName + " FAIL_NUMBER_DNE")
         return
+    
+    # missing name not matching case
 
     accounts[accNum]["status"] = "D"
     session_transactions.append("08 DISABLE " + accNum + " " + accountName)
@@ -338,10 +391,12 @@ def changeplan():
 
     if name == "u":
         print("You are not logged in.")
+        session_transactions.append("09 CHANGEPLAN FAIL_NO_LOGIN")
         return
 
     if session != "admin":
         print("Admin only.")
+        session_transactions.append("09 CHANGEPLAN FAIL_NOT_ADMIN")
         return
 
     accountName = input("Account holder name: ").strip()
@@ -349,7 +404,10 @@ def changeplan():
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName + " FAIL_MISMATCH")
         return
+    
+    # missing deleted account case
 
     current = accounts[accNum]["plan"].upper()
     if current == "S":
