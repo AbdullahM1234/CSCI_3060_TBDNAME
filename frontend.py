@@ -152,10 +152,12 @@ def withdrawal():
 
     if accounts[accountNum]["status"].upper() == "D":
         print("Account is disabled.")
-        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_ACCOUNT_DISABLED")
+        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
         return
 
-    # missing overdraft case
+    if accounts[accountNum]["balance"] - withdraw_amt < 0:
+        print("Account will be overdraft.")
+        session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_WITHDRAWAL_OVERDRAFT")
 
     # missing deleted account case
 
@@ -195,10 +197,12 @@ def transfer():
 
     if accounts[acc1]["status"].upper() == "D" or accounts[acc2]["status"].upper() == "D":
         print("One of the accounts is disabled.")
-        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_ACCOUNT_DISABLED")
+        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
         return
     
-    # missing overdraft test case
+    if accounts[acc1]["balance"] - transferAmount < 0:
+        print("Account will be overdraft.")
+        session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_OVERDRAFT")
 
     # missing deleted account case
 
@@ -237,19 +241,26 @@ def paybill():
         print("Account does not exist.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_ACCOUNT_NUM_DNE")
         return
+    
+    if accountName not in accounts:
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_NO_MATCH")
+        return
 
     if payee not in VALID_PAYEES:
         print("Payee invalid.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_INVALID_PAYEE")
         return
     
-    # missing overdraft case
-
-    # missing invalid account name case
+    if accounts[accNum]["balance"] - billPaid < 0:
+        print("Account will be overdraft.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_OVERDRAFT")
 
     # missing deleted account case
 
-    # missing disabled account case
+    if accounts[accNum]["status"].upper() == "D":
+        print("Account is disabled.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
+        return
 
     accounts[accNum]["balance"] = accounts[accNum]["balance"] - billPaid
     session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName)
@@ -279,7 +290,14 @@ def deposit():
         session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_INVALID_ACCOUNT_NUMBER")
         return
     
-    # missing disabled account case
+    if accountName not in accounts:
+        session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_NO_MATCH")
+        return
+    
+    if accounts[accNum]["status"].upper() == "D":
+        print("Account is disabled.")
+        session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
+        return
 
     # missing deleted account case
 
@@ -317,11 +335,26 @@ def create():
         "plan": "N"
     }
 
-    # missing name too long case
+    if len(accountName) > 20:
+        print("Name length is too long.")
+        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NAME_TOO_LONG")
+        return
 
-    # missing too much money case
+    if balanceinit >= 99999.9:
+        print("Initial balance is too large.")
+        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_EXCESS_MONEY")
+        return
 
-    # missing non-unique case
+    if accountName in accounts:
+        print("Name is not unique.")
+        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NON_UNIQUE")
+        return
+    
+    if new_num in accounts:
+        print("Account Number is not unique.")
+        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NON_UNIQUE")
+        return
+
 
     session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit))
     print("Account created: " + new_num)
@@ -347,10 +380,12 @@ def delete():
 
     if accNum not in accounts:
         print("Account does not exist.")
+        session_transactions.append("07 DELETE " + accNum + " " + accountName + " FAIL_NUMBER_DOES_NOT_MATCH")
+        return
+    
+    if accountName not in accounts:
         session_transactions.append("07 DELETE " + accNum + " " + accountName + " FAIL_NO_MATCH")
         return
-
-    # missing text case for name not matching
 
     del accounts[accNum]
     session_transactions.append("07 DELETE " + accNum + " " + accountName)
@@ -378,6 +413,10 @@ def disable():
     if accNum not in accounts:
         print("Account does not exist.")
         session_transactions.append("08 DISABLE " + accNum + " " + accountName + " FAIL_NUMBER_DNE")
+        return
+    
+    if accountName not in accounts:
+        session_transactions.append("08 DISABLE " + accNum + " " + accountName + " FAIL_NAME_DNE")
         return
     
     # missing name not matching case
@@ -408,6 +447,10 @@ def changeplan():
     if accNum not in accounts:
         print("Account does not exist.")
         session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName + " FAIL_MISMATCH")
+        return
+    
+    if accountName not in accounts:
+        session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName + " FAIL_NAME_DNE")
         return
     
     # missing deleted account case
