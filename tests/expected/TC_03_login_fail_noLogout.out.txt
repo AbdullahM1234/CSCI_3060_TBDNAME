@@ -1,0 +1,3 @@
+Welcome to Banking System
+> You have succesfully logged in
+> Error: already logged in. Please logout before logging in again.

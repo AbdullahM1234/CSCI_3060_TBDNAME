@@ -1,0 +1,2 @@
+Error: No user is currently logged in.
+Transfer transaction rejected.

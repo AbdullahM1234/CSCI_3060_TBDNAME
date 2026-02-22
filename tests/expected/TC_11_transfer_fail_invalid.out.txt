@@ -1,0 +1,2 @@
+Error: Invalid destination account number.
+Transfer transaction rejected.

@@ -1,0 +1,2 @@
+Error: Withdrawal amount exceeds the $500 session limit for standard users.
+Withdrawal transaction rejected.

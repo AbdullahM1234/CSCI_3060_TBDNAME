@@ -1,0 +1,2 @@
+Error: Insufficient funds in account.
+Withdrawal transaction rejected.

@@ -1,0 +1,2 @@
+Error: Invalid account number.
+Withdrawal transaction rejected.

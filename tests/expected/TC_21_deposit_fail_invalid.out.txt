@@ -1,0 +1,2 @@
+Error: Invalid account number.
+Deposit transaction rejected.

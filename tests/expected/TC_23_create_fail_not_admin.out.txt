@@ -1,0 +1,2 @@
+Error: Privileged transaction. Admin access required.
+Create account transaction rejected.

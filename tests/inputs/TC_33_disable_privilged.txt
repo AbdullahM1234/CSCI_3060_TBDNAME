@@ -1,0 +1,6 @@
+login
+standard
+John Doe
+disable
+John Doe
+12345

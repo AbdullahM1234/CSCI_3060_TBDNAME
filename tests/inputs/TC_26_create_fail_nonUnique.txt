@@ -1,0 +1,6 @@
+login
+admin
+create
+John Doe
+500
+*assuming account name John Doe already exists*

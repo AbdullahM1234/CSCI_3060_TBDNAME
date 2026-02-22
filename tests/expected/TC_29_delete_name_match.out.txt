@@ -1,0 +1,2 @@
+Error: Account holder name does not match existing records.
+Delete account transaction rejected.

@@ -1,0 +1,8 @@
+login
+admin
+delete
+John Doe
+12345
+withdrawal
+12345
+50

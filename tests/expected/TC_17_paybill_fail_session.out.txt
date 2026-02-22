@@ -1,0 +1,2 @@
+Error: Paybill amount exceeds the $2000 session limit for standard users.
+Paybill transaction rejected.

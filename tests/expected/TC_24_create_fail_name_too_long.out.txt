@@ -1,0 +1,2 @@
+Error: Account holder name exceeds maximum length.
+Create account transaction rejected.

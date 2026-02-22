@@ -1,0 +1,3 @@
+Disable account transaction accepted.
+Error: Transaction attempted on disabled account.
+Transaction rejected.

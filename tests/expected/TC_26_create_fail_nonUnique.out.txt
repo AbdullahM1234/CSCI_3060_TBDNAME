@@ -1,0 +1,2 @@
+Error: Account already exists.
+Create account transaction rejected.

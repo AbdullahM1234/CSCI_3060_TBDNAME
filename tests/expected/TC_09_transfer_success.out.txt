@@ -1,0 +1,2 @@
+Transfer transaction accepted.
+Funds successfully transferred between accounts.

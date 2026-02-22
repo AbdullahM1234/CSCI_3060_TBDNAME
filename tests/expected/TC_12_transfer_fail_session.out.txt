@@ -1,0 +1,2 @@
+Error: Transfer amount exceeds the $1000 session limit for standard users.
+Transfer transaction rejected.

@@ -1,0 +1,3 @@
+Delete account transaction accepted.
+Error: Transaction attempted on deleted account.
+Transaction rejected.

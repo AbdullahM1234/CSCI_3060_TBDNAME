@@ -1,0 +1,2 @@
+Error: Account number does not match the specified account holder.
+Delete account transaction rejected.
