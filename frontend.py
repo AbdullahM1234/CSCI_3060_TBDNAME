@@ -90,11 +90,14 @@ def login():
     acc_num = input("Account number: ").strip()
     if acc_num not in accounts:
         print("Account does not exist.")
+        session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name + " FAIL_ACCOUNT_NUMBER_DNE")
         return
 
     if accounts[acc_num]["status"].upper() == "D":
         print("Account is disabled.")
+        session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name + " FAIL_ACCOUNT_DISABLED")
         return
+    
 
     name = accounts[acc_num]["name"]
     session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name)
