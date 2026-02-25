@@ -1,0 +1,14 @@
+# add any files you want ingored 
+# to not clutter the github repo
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+
+# Environment variables
+.env
+
+# Next.js build
+.next/

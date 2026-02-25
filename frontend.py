@@ -2,11 +2,11 @@
 
 # Group members
 # Samir Neogi - 100923675
-# Abdullah Mobashar - 100918452 
+# Abdullah Mobashar - 100918452
 # Megan Brandreth - 100778693
 # Brian Husted - 100878395
 
-import os 
+import os
 
 name = "u"  # default name (means not logged in)
 session = "standard"  # default session
@@ -24,7 +24,6 @@ VALID_PAYEES = [  # allowed payees for paybill
     "Business Inc",
     "John Business",
 ]
-
 
 def load_accounts():
     # loads account data from accounts.txt into memory
@@ -50,7 +49,7 @@ def load_accounts():
             "status": status,
             "plan": plan
         }
-    f.close() 
+    f.close()
 
 
 def write_daily_transactions():
@@ -70,7 +69,7 @@ def login():
 
     if name != "u":  # check if already logged in
         print("You are already logged in.")
-        session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name + " FAIL_LOGGED_IN")
+        session_transactions.append("01 LOGIN FAIL_LOGGED_IN")
         return
 
     print("Welcome.")
@@ -97,7 +96,6 @@ def login():
         print("Account is disabled.")
         session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name + " FAIL_ACCOUNT_DISABLED")
         return
-    
 
     name = accounts[acc_num]["name"]
     session_transactions.append("01 LOGIN STANDARD " + acc_num + " " + name)
@@ -158,8 +156,7 @@ def withdrawal():
     if accounts[accountNum]["balance"] - withdraw_amt < 0:
         print("Account will be overdraft.")
         session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName + " FAIL_WITHDRAWAL_OVERDRAFT")
-
-    # missing deleted account case
+        return  # stop the transaction
 
     accounts[accountNum]["balance"] = accounts[accountNum]["balance"] - withdraw_amt
     session_transactions.append("02 WITHDRAW " + accountNum + " " + str(withdraw_amt) + " " + accountName)
@@ -199,12 +196,11 @@ def transfer():
         print("One of the accounts is disabled.")
         session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
         return
-    
+
     if accounts[acc1]["balance"] - transferAmount < 0:
         print("Account will be overdraft.")
         session_transactions.append("03 TRANSFER " + acc1 + " " + acc2 + " " + str(transferAmount) + " " + accountName + " FAIL_OVERDRAFT")
-
-    # missing deleted account case
+        return  # stop the transaction
 
     accounts[acc1]["balance"] = accounts[acc1]["balance"] - transferAmount
     accounts[acc2]["balance"] = accounts[acc2]["balance"] + transferAmount
@@ -241,8 +237,9 @@ def paybill():
         print("Account does not exist.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_ACCOUNT_NUM_DNE")
         return
-    
-    if accountName not in accounts:
+
+    if accounts[accNum]["name"] != accountName:
+        print("Name does not match account.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_NO_MATCH")
         return
 
@@ -250,17 +247,16 @@ def paybill():
         print("Payee invalid.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_INVALID_PAYEE")
         return
-    
-    if accounts[accNum]["balance"] - billPaid < 0:
-        print("Account will be overdraft.")
-        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_OVERDRAFT")
-
-    # missing deleted account case
 
     if accounts[accNum]["status"].upper() == "D":
         print("Account is disabled.")
         session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
         return
+
+    if accounts[accNum]["balance"] - billPaid < 0:
+        print("Account will be overdraft.")
+        session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName + " FAIL_OVERDRAFT")
+        return  # stop the transaction
 
     accounts[accNum]["balance"] = accounts[accNum]["balance"] - billPaid
     session_transactions.append("04 PAYBILL " + accNum + " " + str(billPaid) + " " + payee + " " + accountName)
@@ -289,17 +285,16 @@ def deposit():
         print("Account does not exist.")
         session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_INVALID_ACCOUNT_NUMBER")
         return
-    
-    if accountName not in accounts:
+
+    if accounts[accNum]["name"] != accountName:
+        print("Name does not match account.")
         session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_NO_MATCH")
         return
-    
+
     if accounts[accNum]["status"].upper() == "D":
         print("Account is disabled.")
         session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName + " FAIL_TRANSACTION_ON_DISABLED_ACCOUNT")
         return
-
-    # missing deleted account case
 
     accounts[accNum]["balance"] = accounts[accNum]["balance"] + amount
     session_transactions.append("05 DEPOSIT " + accNum + " " + str(amount) + " " + accountName)
@@ -328,13 +323,6 @@ def create():
     while new_num in accounts:
         new_num = str(int(new_num) + 1)
 
-    accounts[new_num] = {
-        "name": accountName,
-        "balance": balanceinit,
-        "status": "A",
-        "plan": "N"
-    }
-
     if len(accountName) > 20:
         print("Name length is too long.")
         session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NAME_TOO_LONG")
@@ -345,16 +333,18 @@ def create():
         session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_EXCESS_MONEY")
         return
 
-    if accountName in accounts:
-        print("Name is not unique.")
-        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NON_UNIQUE")
-        return
-    
-    if new_num in accounts:
-        print("Account Number is not unique.")
-        session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NON_UNIQUE")
-        return
+    for num in accounts:
+        if accounts[num]["name"] == accountName:
+            print("Name is not unique.")
+            session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit) + " FAIL_NON_UNIQUE")
+            return
 
+    accounts[new_num] = {
+        "name": accountName,
+        "balance": balanceinit,
+        "status": "A",
+        "plan": "N"
+    }
 
     session_transactions.append("06 CREATE " + new_num + " " + accountName + " " + str(balanceinit))
     print("Account created: " + new_num)
@@ -382,8 +372,9 @@ def delete():
         print("Account does not exist.")
         session_transactions.append("07 DELETE " + accNum + " " + accountName + " FAIL_NUMBER_DOES_NOT_MATCH")
         return
-    
-    if accountName not in accounts:
+
+    if accounts[accNum]["name"] != accountName:
+        print("Name does not match account.")
         session_transactions.append("07 DELETE " + accNum + " " + accountName + " FAIL_NO_MATCH")
         return
 
@@ -414,12 +405,11 @@ def disable():
         print("Account does not exist.")
         session_transactions.append("08 DISABLE " + accNum + " " + accountName + " FAIL_NUMBER_DNE")
         return
-    
-    if accountName not in accounts:
+
+    if accounts[accNum]["name"] != accountName:
+        print("Name does not match account.")
         session_transactions.append("08 DISABLE " + accNum + " " + accountName + " FAIL_NAME_DNE")
         return
-    
-    # missing name not matching case
 
     accounts[accNum]["status"] = "D"
     session_transactions.append("08 DISABLE " + accNum + " " + accountName)
@@ -448,12 +438,11 @@ def changeplan():
         print("Account does not exist.")
         session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName + " FAIL_MISMATCH")
         return
-    
-    if accountName not in accounts:
+
+    if accounts[accNum]["name"] != accountName:
+        print("Name does not match account.")
         session_transactions.append("09 CHANGEPLAN " + accNum + " " + accountName + " FAIL_NAME_DNE")
         return
-    
-    # missing deleted account case
 
     current = accounts[accNum]["plan"].upper()
     if current == "S":
