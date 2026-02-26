@@ -1,6 +1,6 @@
-login
+1
 standard
-John Doe
-delete
-John Doe
 12345
+7
+10
+11

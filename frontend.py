@@ -7,6 +7,7 @@
 # Brian Husted - 100878395
 
 import os
+import sys
 
 name = "u"  # default name (means not logged in)
 session = "standard"  # default session
@@ -17,7 +18,19 @@ session_transactions = []  # stores transactions during current session
 # make sure you run the py file in the CSCI_3060_TBDNAME directory
 # or the file reading wont work
 ACCOUNTS_FILE = "accounts.txt"
-DAILY_TX_FILE = "transactions/daily_transactions.txt"
+DAILY_TX_FILE = "transactions/daily_transactions.atf"
+
+# check arguments
+if len(sys.argv) == 1:
+    # no arguments → use defaults
+    pass
+
+elif len(sys.argv) == 3:
+    # two arguments → use provided files
+    ACCOUNTS_FILE = sys.argv[1]
+    DAILY_TX_FILE = sys.argv[2]
+
+is_test_mode = not sys.stdin.isatty()
 
 VALID_PAYEES = [  # allowed payees for paybill
     "Company",
@@ -460,18 +473,19 @@ def main():
     load_accounts()
 
     while True:
-        print("\nWelcome! What would you like to do?\n")
-        print("1. Log in")
-        print("2. Withdraw")
-        print("3. Transfer")
-        print("4. Pay Bill")
-        print("5. Deposit")
-        print("6. Create Account")
-        print("7. Delete Account")
-        print("8. Disable Account")
-        print("9. Change Account Plan")
-        print("10. Log Out")
-        print("11. Exit\n")
+        if not is_test_mode:
+            print("\nWelcome! What would you like to do?\n")
+            print("1. Log in")
+            print("2. Withdraw")
+            print("3. Transfer")
+            print("4. Pay Bill")
+            print("5. Deposit")
+            print("6. Create Account")
+            print("7. Delete Account")
+            print("8. Disable Account")
+            print("9. Change Account Plan")
+            print("10. Log Out")
+            print("11. Exit\n")
 
         choice = input("Please input the number of your selection to be redirected: ").strip()
 

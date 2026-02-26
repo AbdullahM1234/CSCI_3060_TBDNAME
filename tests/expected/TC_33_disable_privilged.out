@@ -1,2 +1,7 @@
-Error: Privileged transaction. Admin access required.
-Disable account transaction rejected.
+Please input the number of your selection to be redirected: Welcome.
+What session are you opening today? (admin or standard)
+standard selected.
+Account number: Welcome, John.
+Please input the number of your selection to be redirected: Admin only.
+Please input the number of your selection to be redirected: Logged out.
+Please input the number of your selection to be redirected: Goodbye.

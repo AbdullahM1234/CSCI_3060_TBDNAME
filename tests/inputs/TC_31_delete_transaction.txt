@@ -1,8 +1,11 @@
-login
+1
 admin
-delete
-John Doe
+7
+John
 12345
-withdrawal
+2
+John
 12345
-50
+100
+10
+11

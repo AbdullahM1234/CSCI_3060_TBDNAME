@@ -1,6 +1,8 @@
-login
+1
 standard
-John Doe
-deposit
+12345
+5
 99999
-100
+200
+10
+11
