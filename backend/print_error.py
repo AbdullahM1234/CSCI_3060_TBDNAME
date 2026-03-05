@@ -1,3 +1,5 @@
+import sys
+
 def log_constraint_error(description, context, fatal=False):
     """
     Logs errors in the required format and exits if fatal.
@@ -10,6 +12,7 @@ def log_constraint_error(description, context, fatal=False):
     """
     if fatal:
         print(f"ERROR: Fatal error - File {context} - {description}")
-        #exit system code here
+        # exit system code
+        sys.exit()
     else:
         print(f"ERROR: {context}: {description}")
