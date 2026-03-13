@@ -1,82 +1,133 @@
+# read.py
+# simple helper functions for backend input files
+
+# reads old master accounts file into a dictionary
+# format: NNNNN AAAAAAAAAAAAAAAAAAAA S PPPPPPPP TTTT
 def read_old_bank_accounts(file_path):
-    """
-    Reads and validates the bank account file format with plan type (SP/NP)
-    Returns list of accounts and prints fatal errors for invalid format
-    """
-    accounts = []
-    with open(file_path, 'r') as file:
-        for line_num, line in enumerate(file, 1):
-            clean_line = line.rstrip('\n')
-            
-            # Validate line length (now 44 chars to include plan type)
-            if len(clean_line) != 45:
-                print(f"ERROR: Fatal error - Line {line_num}: Invalid length ({len(clean_line)} chars, expected 45)")
-                continue
 
-            try:
-                # Extract fields with positional validation
-                account_number = clean_line[0:4]
-                name = clean_line[6:25]  # 20 characters
-                status = clean_line[27]
-                balance_str = clean_line[29:37]  # 8 characters
-                transactions_str = clean_line[38:42]  # 4 characters
-                plan_type = clean_line[43:45]  # 2 characters (SP/NP)
+    accounts = {}
 
-                # Validate account number
-                if not account_number.isdigit():
-                    print(f"ERROR: Fatal error - Line {line_num}: Account number must be 5 digits")
-                    continue
+    f = open(file_path, "r", encoding="utf-8")
 
-                # Validate status
-                if status not in ('A', 'D'):
-                    print(f"ERROR: Fatal error - Line {line_num}: Invalid status '{status}'. Must be 'A' or 'D'")
-                    continue
+    for raw in f:
+        line = raw.rstrip("\n")
 
-                # Validate balance format with explicit negative check
-                if balance_str[0] == '-':
-                    print(f"ERROR: Fatal error - Line {line_num}: Negative balance detected: {balance_str}")
-                    continue
-                
-                if (len(balance_str) != 8 or 
-                    balance_str[5] != '.' or 
-                    not balance_str[:5].isdigit() or 
-                    not balance_str[6:].isdigit()):
-                    print(f"ERROR: Fatal error - Line {line_num}: Invalid balance format. Expected XXXXX.XX, got {balance_str}")
-                    continue
+        if line == "":
+            continue
 
-                # Validate transaction count
-                if not transactions_str.isdigit():
-                    print(f"ERROR: Fatal error - Line {line_num}: Transaction count must be 4 digits")
-                    continue
+        account_number = line[0:5]
 
-                # Validate plan type
-                if plan_type not in ('SP', 'NP'):
-                    print(f"ERROR: Fatal error - Line {line_num}: Invalid plan type '{plan_type}'. Must be SP or NP")
-                    continue
+        # remove underscore padding from name
+        name = line[6:26].rstrip("_").strip()
 
-                # Convert values
-                balance = float(balance_str)
-                transactions = int(transactions_str)
+        status = line[27]
 
-                # Business rule validation
-                if balance < 0:
-                    print(f"ERROR: Fatal error - Line {line_num}: Negative balance detected")
-                    continue
-                if transactions < 0:
-                    print(f"ERROR: Fatal error - Line {line_num}: Negative transaction not allowed")
-                    continue
+        balance = float(line[29:38])
 
-                accounts.append({
-                    'account_number': account_number.lstrip('0') or '0',
-                    'name': name.strip(),
-                    'status': status,
-                    'balance': balance,
-                    'total_transactions': transactions,
-                    'plan': plan_type
-                })
+        total_transactions = int(line[39:43])
 
-            except Exception as e:
-                print(f"ERROR: Fatal error - Line {line_num}: Unexpected error - {str(e)}")
-                continue
+        accounts[account_number] = {
+            "account_number": account_number,
+            "name": name,
+            "status": status,
+            "balance": balance,
+            "total_transactions": total_transactions,
+            "plan": "NP",
+            "session_count": 0
+        }
+
+    f.close()
 
     return accounts
+
+
+def read_merged_transactions(file_path):
+
+    transactions = []
+
+    f = open(file_path, "r", encoding="utf-8")
+
+    for raw in f:
+        line = raw.strip()
+
+        if line == "":
+            continue
+
+        parts = line.split()
+        code = parts[0]
+
+        tx = {
+            "code": code,
+            "raw": line,
+            "account_number": "",
+            "amount": 0.0,
+            "name": "",
+            "misc": ""
+        }
+
+        if code == "00":
+            transactions.append(tx)
+
+        elif code == "01":
+            if len(parts) >= 3:
+                tx["name"] = parts[2]
+            transactions.append(tx)
+
+        elif code == "02":
+            if len(parts) >= 5:
+                tx["account_number"] = parts[2]
+                tx["amount"] = float(parts[3])
+                tx["name"] = " ".join(parts[4:])
+            transactions.append(tx)
+
+        elif code == "03":
+            if len(parts) >= 6:
+                tx["account_number"] = parts[2]
+                tx["misc"] = parts[3]
+                tx["amount"] = float(parts[4])
+                tx["name"] = " ".join(parts[5:])
+            transactions.append(tx)
+
+        elif code == "04":
+            if len(parts) >= 6:
+                tx["account_number"] = parts[2]
+                tx["amount"] = float(parts[3])
+                tx["misc"] = parts[4]
+                tx["name"] = " ".join(parts[5:])
+            transactions.append(tx)
+
+        elif code == "05":
+            if len(parts) >= 5:
+                tx["account_number"] = parts[2]
+                tx["amount"] = float(parts[3])
+                tx["name"] = " ".join(parts[4:])
+            transactions.append(tx)
+
+        elif code == "06":
+            if len(parts) >= 5:
+                tx["account_number"] = parts[2]
+                tx["name"] = parts[3]
+                tx["amount"] = float(parts[4])
+            transactions.append(tx)
+
+        elif code == "07":
+            if len(parts) >= 4:
+                tx["account_number"] = parts[2]
+                tx["name"] = " ".join(parts[3:])
+            transactions.append(tx)
+
+        elif code == "08":
+            if len(parts) >= 4:
+                tx["account_number"] = parts[2]
+                tx["name"] = " ".join(parts[3:])
+            transactions.append(tx)
+
+        elif code == "09":
+            if len(parts) >= 4:
+                tx["account_number"] = parts[2]
+                tx["name"] = " ".join(parts[3:])
+            transactions.append(tx)
+
+    f.close()
+
+    return transactions

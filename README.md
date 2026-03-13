@@ -13,6 +13,10 @@ In the CSCI_3060_TBDNAME folder, in console:
 or
 #### python3 frontend.py
 
+After running frontend and generating the transaction file:
+
+#### python3 backend.py
+
 # Run Tests
 generate output files:
 #### bash run_test.sh
