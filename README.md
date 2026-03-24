@@ -17,7 +17,7 @@ After running frontend and generating the transaction file:
 
 #### python3 backend.py
 
-# Run Tests
+# Run Frontend Tests (Shell)
 generate output files:
 #### bash run_test.sh
 
@@ -29,3 +29,9 @@ format in console:
 #### <  (actual output)
 #### ---
 #### >  (expected output)
+
+# Run Backend Tests (Unittest)
+
+#### python3 -m unittest backend_tests.test_process_transaction
+
+#### python3 -m unittest backend_tests.test_read_transactions
