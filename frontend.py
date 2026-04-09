@@ -487,7 +487,10 @@ def main():
             print("10. Log Out")
             print("11. Exit\n")
 
-        choice = input("Please input the number of your selection to be redirected: ").strip()
+        try:
+            choice = input("Please input the number of your selection to be redirected: ").strip()
+        except EOFError:
+            break
 
         match choice:
             case "1":

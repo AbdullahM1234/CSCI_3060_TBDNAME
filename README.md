@@ -35,3 +35,11 @@ format in console:
 #### python3 -m unittest backend_tests.test_process_transaction
 
 #### python3 -m unittest backend_tests.test_read_transactions
+
+# How to run merged transaction script
+
+#### ./daily.sh weekly_transactions/dayX
+
+X being a number 1-7
+
+#### ./weekly.sh
